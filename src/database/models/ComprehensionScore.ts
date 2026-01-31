@@ -21,7 +21,7 @@ export class ComprehensionScore extends BaseModel {
   declare materialId: string;
 
   @BelongsTo(() => Material)
-  declare material?: Material;
+  declare material?: any;
 
   @Column({ type: DataType.FLOAT, allowNull: false, defaultValue: 0 })
   declare score: number;

@@ -13,7 +13,7 @@ export class ContentChunk extends BaseModel {
   declare materialId: string;
 
   @BelongsTo(() => Material)
-  declare material?: Material;
+  declare material?: any;
 
   @Column({ type: DataType.TEXT("long"), allowNull: false })
   declare content: string;

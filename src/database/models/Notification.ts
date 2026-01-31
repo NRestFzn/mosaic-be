@@ -21,7 +21,7 @@ export class Notification extends BaseModel {
   declare materialId?: string | null;
 
   @BelongsTo(() => Material)
-  declare material?: Material;
+  declare material?: any;
 
   @Column({ type: DataType.STRING(200), allowNull: false })
   declare title: string;
