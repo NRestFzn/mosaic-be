@@ -162,7 +162,7 @@ export const aiService = {
     }
 
     const model = getModel();
-    const prompt = `${getToneInstruction()}\n\nBuat ${count} flashcard dari materi. Kembalikan JSON array objek dengan format {"front":"...","back":"..."}. Gunakan bahasa sesuai instruksi.\n\n${material.rawText}`;
+    const prompt = `${getToneInstruction()}\n\nBuat ${count} pertanyaan benar/salah (true/false) dari materi. Kembalikan JSON array objek dengan format {"front":"...","back":"...","correctAnswer":true|false}. "front" adalah pernyataan/pertanyaan, "back" adalah penjelasan singkat. Gunakan bahasa sesuai instruksi.\n\n${material.rawText}`;
     const result = await model.generateContent(prompt);
     const parsed = safeJsonParse(result.response.text());
 
@@ -171,8 +171,13 @@ export const aiService = {
     }
 
     const items = parsed
-      .filter((item) => item?.front && item?.back)
-      .map((item) => ({ materialId, front: String(item.front), back: String(item.back) }));
+      .filter((item) => item?.front && item?.back && typeof item?.correctAnswer === "boolean")
+      .map((item) => ({
+        materialId,
+        front: String(item.front),
+        back: String(item.back),
+        correctAnswer: Boolean(item.correctAnswer)
+      }));
 
     return flashcardRepository.bulkCreate(items);
   },
@@ -214,12 +219,19 @@ export const aiService = {
     userId: string;
     materialId: string;
     flashcardId: string;
-    isCorrect: boolean;
+    selectedAnswer: boolean;
   }) {
+    const flashcard = await flashcardRepository.findById(input.flashcardId);
+    if (!flashcard) {
+      throw AppError.notFound("Flashcard not found");
+    }
+
+    const isCorrect = flashcard.correctAnswer === input.selectedAnswer;
+
     await flashcardAttemptRepository.create({
       userId: input.userId,
       flashcardId: input.flashcardId,
-      isCorrect: input.isCorrect
+      isCorrect
     });
 
     return this.updateComprehensionScore(input.userId, input.materialId);

@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   createMaterial,
   uploadMaterial,
+  listMaterials,
   generateFlashcards,
   generateQuiz,
   generateSummary,
@@ -30,6 +31,7 @@ aiRoutes.post(
   validateBody(createMaterialSchema),
   asyncHandler(createMaterial)
 );
+aiRoutes.get("/materials", authenticate, asyncHandler(listMaterials));
 aiRoutes.post(
   "/materials/upload",
   authenticate,
