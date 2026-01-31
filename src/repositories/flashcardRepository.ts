@@ -4,7 +4,15 @@ import { Flashcard } from "../database/models/Flashcard.js";
 import { FlashcardAttempt } from "../database/models/FlashcardAttempt.js";
 
 export const flashcardRepository = {
-  bulkCreate(items: { materialId: string; front: string; back: string; correctAnswer: boolean }[]) {
+  bulkCreate(
+    items: {
+      materialId: string;
+      front: string;
+      back: string;
+      correctAnswer: boolean;
+      difficulty: "easy" | "medium" | "hard";
+    }[]
+  ) {
     return Flashcard.bulkCreate(items);
   },
   findByMaterialId(materialId: string) {

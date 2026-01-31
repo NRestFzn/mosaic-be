@@ -23,4 +23,7 @@ export class Flashcard extends BaseModel {
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
   declare correctAnswer: boolean;
+
+  @Column({ type: DataType.STRING(10), allowNull: false, defaultValue: "medium" })
+  declare difficulty: "easy" | "medium" | "hard";
 }

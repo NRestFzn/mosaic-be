@@ -47,6 +47,15 @@ const safeJsonParse = (text: string) => {
   }
 };
 
+const normalizeDifficulty = (value: unknown): "easy" | "medium" | "hard" => {
+  if (typeof value !== "string") return "medium";
+  const normalized = value.toLowerCase();
+  if (normalized === "easy" || normalized === "medium" || normalized === "hard") {
+    return normalized;
+  }
+  return "medium";
+};
+
 const getToneInstruction = () => {
   const langCode = env.APP_LANG ?? "id";
 
@@ -162,7 +171,34 @@ export const aiService = {
     }
 
     const model = getModel();
-    const prompt = `${getToneInstruction()}\n\nBuat ${count} pertanyaan benar/salah (true/false) dari materi. Kembalikan JSON array objek dengan format {"front":"...","back":"...","correctAnswer":true|false}. "front" adalah pernyataan/pertanyaan, "back" adalah penjelasan singkat. Gunakan bahasa sesuai instruksi.\n\n${material.rawText}`;
+    const prompt = `${getToneInstruction()}
+    Buat ${count} pertanyaan benar/salah (true/false) dari materi berikut.
+    Kembalikan dalam format JSON array dengan struktur:
+    {
+    "front": "pernyataan atau pertanyaan",
+    "back": "penjelasan singkat kenapa jawabannya benar atau salah",
+    "correctAnswer": true | false,
+    "difficulty": "easy" | "medium" | "hard"
+    }
+    
+    Aturan tingkat kesulitan:
+    - easy  → fakta langsung, definisi dasar, atau konsep yang disebutkan jelas di materi
+    - medium → butuh sedikit pemahaman atau hubungan antar konsep
+    - hard → butuh penalaran, implikasi, atau pemahaman mendalam dari materi
+
+    Usahakan distribusi tingkat kesulitan seimbang:
+    - 30% easy
+    - 40% medium
+    - 30% hard
+    
+    Pastikan:
+    - Jawaban benar-benar bisa ditentukan dari materi
+    - Penjelasan singkat, jelas, dan membantu belajar
+    - Gunakan bahasa sesuai instruksi sebelumnya
+    - Jangan tambahkan teks di luar JSON
+    
+    Materi: ${material.rawText}`;
+
     const result = await model.generateContent(prompt);
     const parsed = safeJsonParse(result.response.text());
 
@@ -176,7 +212,8 @@ export const aiService = {
         materialId,
         front: String(item.front),
         back: String(item.back),
-        correctAnswer: Boolean(item.correctAnswer)
+        correctAnswer: Boolean(item.correctAnswer),
+        difficulty: normalizeDifficulty(item?.difficulty)
       }));
 
     return flashcardRepository.bulkCreate(items);
@@ -194,7 +231,37 @@ export const aiService = {
     }
 
     const model = getModel();
-    const prompt = `${getToneInstruction()}\n\nBuat ${count} soal pilihan ganda dari materi. Kembalikan JSON array objek dengan format {"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"..."}. Gunakan bahasa sesuai instruksi.\n\n${material.rawText}`;
+    const prompt = `${getToneInstruction()}
+    Buat ${count} soal pilihan ganda dari materi berikut.
+    Format JSON array:
+    {
+    "question": "pertanyaan",
+    "options": ["A", "B", "C", "D"],
+    "answer": "A",
+    "explanation": "penjelasan kenapa jawabannya benar",
+    "difficulty": "easy" | "medium" | "hard"
+    }
+    
+    Aturan tingkat kesulitan:
+    - easy  → menguji ingatan langsung atau definisi dasar
+    - medium → menguji pemahaman konsep atau perbandingan
+    - hard → menguji analisis, penerapan konsep, atau hubungan kompleks
+
+    Usahakan distribusi tingkat kesulitan seimbang:
+    - 30% easy
+    - 40% medium
+    - 30% hard
+
+    
+    Aturan tambahan:
+    - Hanya satu jawaban yang benar
+    - Distractor (opsi salah) harus masuk akal
+    - Explanation singkat tapi jelas
+    - Jangan tambahkan teks di luar JSON
+    - Gunakan bahasa sesuai instruksi sebelumnya
+    
+    Materi: ${material.rawText}`;
+
     const result = await model.generateContent(prompt);
     const parsed = safeJsonParse(result.response.text());
 
@@ -209,7 +276,8 @@ export const aiService = {
         question: String(item.question),
         options: item.options.map((opt: unknown) => String(opt)),
         answer: String(item.answer),
-        explanation: item.explanation ? String(item.explanation) : null
+        explanation: item.explanation ? String(item.explanation) : null,
+        difficulty: normalizeDifficulty(item?.difficulty)
       }));
 
     return quizRepository.bulkCreate(items);

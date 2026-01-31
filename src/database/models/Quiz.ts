@@ -26,4 +26,7 @@ export class Quiz extends BaseModel {
 
   @Column({ type: DataType.TEXT("long"), allowNull: true })
   declare explanation?: string | null;
+
+  @Column({ type: DataType.STRING(10), allowNull: false, defaultValue: "medium" })
+  declare difficulty: "easy" | "medium" | "hard";
 }

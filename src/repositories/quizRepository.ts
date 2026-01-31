@@ -9,6 +9,7 @@ export const quizRepository = {
       options: string[];
       answer: string;
       explanation?: string | null;
+      difficulty: "easy" | "medium" | "hard";
     }[]
   ) {
     return Quiz.bulkCreate(items);
